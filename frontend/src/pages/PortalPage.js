@@ -1,6 +1,6 @@
 // src/pages/PortalPage.js
 
-export default function PortalPage({ userData }) {
+export default function PortalPage({ userData, userHistory }) {  // ✅ Ahora recibe userHistory también
     if (!userData) {
         return (
             <div className="container mx-auto px-6 py-16 text-center">
@@ -9,6 +9,15 @@ export default function PortalPage({ userData }) {
             </div>
         );
     }
+
+    // Valores por defecto si userHistory no existe
+    const history = userHistory || {
+        hotels: [],
+        restaurants: [],
+        experiences: [],
+        purchases: [],
+        totalSpent: 0
+    };
 
     return (
         <div className="container mx-auto px-6 py-16">
@@ -33,24 +42,32 @@ export default function PortalPage({ userData }) {
                         </div>
                     </div>
 
-                    {/* Estadísticas */}
+                    {/* Estadísticas REALES basadas en userHistory */}
                     <div className="bg-gray-50 p-6 rounded-lg">
                         <h3 className="text-2xl font-bold mb-4">Mis Estadísticas</h3>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="text-center">
-                                <p className="text-3xl font-bold text-theme-primary">5</p>
-                                <p className="text-sm text-gray-600">Reservas</p>
+                                <p className="text-3xl font-bold text-theme-primary">
+                                    {history.hotels.length}
+                                </p>
+                                <p className="text-sm text-gray-600">Hoteles</p>
                             </div>
                             <div className="text-center">
-                                <p className="text-3xl font-bold text-theme-secondary">3</p>
+                                <p className="text-3xl font-bold text-theme-secondary">
+                                    {history.experiences.length}
+                                </p>
                                 <p className="text-sm text-gray-600">Experiencias</p>
                             </div>
                             <div className="text-center">
-                                <p className="text-3xl font-bold text-theme-primary">$15,200</p>
+                                <p className="text-3xl font-bold text-theme-primary">
+                                    ${history.totalSpent.toFixed(0)}
+                                </p>
                                 <p className="text-sm text-gray-600">Total Gastado</p>
                             </div>
                             <div className="text-center">
-                                <p className="text-3xl font-bold text-theme-secondary">2</p>
+                                <p className="text-3xl font-bold text-theme-secondary">
+                                    {history.purchases.length}
+                                </p>
                                 <p className="text-sm text-gray-600">Artesanías</p>
                             </div>
                         </div>
@@ -63,7 +80,7 @@ export default function PortalPage({ userData }) {
                     <div className="bg-gray-50 p-6 rounded-lg">
                         <div className="space-y-4">
                             {/* Hoteles */}
-                            {userHistory?.hotels?.length > 0 && userHistory.hotels.map((reservation, index) => (
+                            {history.hotels.length > 0 && history.hotels.map((reservation, index) => (
                                 <div key={index} className="flex justify-between items-center border-b pb-2">
                                     <div>
                                         <h4 className="font-semibold">🏨 {reservation.name}</h4>
@@ -78,7 +95,7 @@ export default function PortalPage({ userData }) {
                             ))}
                             
                             {/* Experiencias */}
-                            {userHistory?.experiences?.length > 0 && userHistory.experiences.map((experience, index) => (
+                            {history.experiences.length > 0 && history.experiences.map((experience, index) => (
                                 <div key={index} className="flex justify-between items-center border-b pb-2">
                                     <div>
                                         <h4 className="font-semibold">🎯 {experience.name}</h4>
@@ -94,7 +111,7 @@ export default function PortalPage({ userData }) {
                             ))}
                             
                             {/* Restaurantes */}
-                            {userHistory?.restaurants?.length > 0 && userHistory.restaurants.map((order, index) => (
+                            {history.restaurants.length > 0 && history.restaurants.map((order, index) => (
                                 <div key={index} className="flex justify-between items-center border-b pb-2">
                                     <div>
                                         <h4 className="font-semibold">🍽️ {order.name}</h4>
@@ -109,7 +126,7 @@ export default function PortalPage({ userData }) {
                             ))}
                             
                             {/* Compras */}
-                            {userHistory?.purchases?.length > 0 && userHistory.purchases.map((purchase, index) => (
+                            {history.purchases.length > 0 && history.purchases.map((purchase, index) => (
                                 <div key={index} className="flex justify-between items-center border-b pb-2">
                                     <div>
                                         <h4 className="font-semibold">🎨 Artesanías</h4>
@@ -125,8 +142,10 @@ export default function PortalPage({ userData }) {
                             ))}
                             
                             {/* Mensaje si no hay historial */}
-                            {(!userHistory?.hotels?.length && !userHistory?.experiences?.length && 
-                              !userHistory?.restaurants?.length && !userHistory?.purchases?.length) && (
+                            {(history.hotels.length === 0 && 
+                              history.experiences.length === 0 && 
+                              history.restaurants.length === 0 && 
+                              history.purchases.length === 0) && (
                                 <p className="text-gray-500 text-center py-4">
                                     Aún no tienes reservas. ¡Explora nuestros servicios para comenzar tu aventura maya!
                                 </p>
