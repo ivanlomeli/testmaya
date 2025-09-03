@@ -1,10 +1,11 @@
 // src/components/Header.js
 
-import { NavLink } from 'react-router-dom'; // <-- 1. Importar NavLink
+import { useState } from 'react';
+import { NavLink } from 'react-router-dom';
 import logo from '../assets/Imagotipo-Maya-Digital-2022.png';
 
-// El header ahora es más simple, ya no maneja el estado de la página activa
-export default function Header({ cartItemCount, onCartClick, onLoginClick }) {
+export default function Header({ cartItemCount, onCartClick, onLoginClick, isLoggedIn, userData }) {
+    const [showUserMenu, setShowUserMenu] = useState(false);
 
     const navLinks = [
         { to: '/', label: 'Hoteles' },
@@ -17,6 +18,11 @@ export default function Header({ cartItemCount, onCartClick, onLoginClick }) {
     // Función para determinar el estilo del NavLink (activo vs inactivo)
     const getNavLinkClass = ({ isActive }) => 
         `relative z-10 px-4 py-1.5 text-sm font-semibold transition-colors duration-300 ${isActive ? 'text-theme-dark' : 'text-gray-500 hover:text-theme-dark'}`;
+
+    const handleLogout = () => {
+        // Esta función será pasada desde App.js en una futura actualización
+        window.location.reload(); // Por ahora, recarga la página para simular logout
+    };
 
     return (
         <header className="bg-white/70 backdrop-blur-lg shadow-sm sticky top-0 z-50 border-b border-white/20">
@@ -40,15 +46,71 @@ export default function Header({ cartItemCount, onCartClick, onLoginClick }) {
                 </div>
 
                 <div className="flex items-center gap-4">
+                    {/* Carrito */}
                     <div className="relative cursor-pointer" onClick={onCartClick}>
-                        <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        </svg>
                         {cartItemCount > 0 && (
                             <span className="absolute -top-2 -right-2 bg-theme-secondary text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold border-2 border-white">{cartItemCount}</span>
                         )}
                     </div>
-                    <button onClick={onLoginClick} className="hidden md:block bg-gray-800 text-white font-semibold text-sm px-4 py-2 rounded-full hover:bg-gray-900 transition-colors">
-                        Iniciar Sesión
-                    </button>
+
+                    {/* Usuario - Logueado o No Logueado */}
+                    {isLoggedIn && userData ? (
+                        <div className="relative">
+                            <button 
+                                onClick={() => setShowUserMenu(!showUserMenu)}
+                                className="flex items-center gap-2 bg-theme-primary text-white font-semibold text-sm px-4 py-2 rounded-full hover:bg-theme-primary/90 transition-colors"
+                            >
+                                <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center">
+                                    <span className="text-xs font-bold">
+                                        {userData.name?.charAt(0).toUpperCase() || 'U'}
+                                    </span>
+                                </div>
+                                <span className="hidden md:block">
+                                    {userData.name || 'Usuario'}
+                                </span>
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+
+                            {/* Dropdown Menu */}
+                            {showUserMenu && (
+                                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border py-2 z-50">
+                                    <div className="px-4 py-2 border-b">
+                                        <p className="font-semibold text-gray-800">{userData.name}</p>
+                                        <p className="text-sm text-gray-500">{userData.email}</p>
+                                    </div>
+                                    <NavLink 
+                                        to="/portal" 
+                                        className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors"
+                                        onClick={() => setShowUserMenu(false)}
+                                    >
+                                        🏠 Mi Panel
+                                    </NavLink>
+                                    <button 
+                                        onClick={() => {
+                                            setShowUserMenu(false);
+                                            // Aquí iría la lógica de logout
+                                            alert('Función de logout pendiente de implementar');
+                                        }}
+                                        className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors"
+                                    >
+                                        🚪 Cerrar Sesión
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <button 
+                            onClick={onLoginClick} 
+                            className="hidden md:block bg-gray-800 text-white font-semibold text-sm px-4 py-2 rounded-full hover:bg-gray-900 transition-colors"
+                        >
+                            Iniciar Sesión
+                        </button>
+                    )}
                 </div>
             </nav>
         </header>

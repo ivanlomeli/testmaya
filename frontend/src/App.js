@@ -12,7 +12,7 @@ import HotelBookingForm from './components/HotelBookingForm';
 import RestaurantMenu from './components/RestaurantMenu';
 import CaballosBookingForm from './components/CaballosBookingForm';
 import CenoteBookingForm from './components/CenoteBookingForm';
-import TourBookingForm from './components/TourBookingForm'; // <-- Importar nuevo formulario
+import TourBookingForm from './components/TourBookingForm';
 import ProductDetailPage from './pages/ProductDetailPage';
 import CartModal from './components/CartModal';
 import TransporteModal from './components/TransporteModal';
@@ -35,10 +35,81 @@ function App() {
     const openModal = (type, data = null) => setModalState({ type, data });
     const closeModal = () => setModalState({ type: null, data: null });
 
-    const handleAddToCart = (product) => { /* ...lógica sin cambios... */ };
-    const handleRemoveFromCart = (productId) => { /* ...lógica sin cambios... */ };
-    const handleConfirmAction = (actionType, actionData) => { /* ...lógica sin cambios... */ };
-    const handleRegistration = (newUserInfo) => { /* ...lógica sin cambios... */ };
+    // ✅ FUNCIÓN: Agregar productos al carrito
+    const handleAddToCart = (product) => {
+        setCart(prevCart => [...prevCart, product]);
+        alert(`${product.name} agregado al carrito!`);
+    };
+
+    // ✅ FUNCIÓN: Remover productos del carrito
+    const handleRemoveFromCart = (productId) => {
+        setCart(prevCart => prevCart.filter(item => item.id !== productId));
+    };
+
+    // ✅ FUNCIÓN: Manejar confirmaciones de reservas
+    const handleConfirmAction = (actionType, actionData) => {
+        // Si no está logueado, guardar la acción pendiente y mostrar registro
+        if (!isLoggedIn) {
+            setPendingAction({ type: actionType, data: actionData });
+            openModal('register');
+            return;
+        }
+
+        // Si está logueado, procesar la acción
+        switch (actionType) {
+            case 'hotel':
+                alert(`Reserva confirmada en ${actionData.name} por $${actionData.total.toFixed(2)} MXN`);
+                break;
+            case 'restaurant':
+                alert(`Pedido confirmado en ${actionData.name} por $${actionData.total.toFixed(2)} MXN`);
+                break;
+            case 'experience':
+                alert(`Experiencia "${actionData.name}" reservada para ${actionData.personas} persona(s) por $${actionData.total.toFixed(2)} MXN`);
+                break;
+            default:
+                alert('Acción confirmada');
+        }
+        closeModal();
+    };
+
+    // ✅ FUNCIÓN: Manejar registro de usuarios
+    const handleRegistration = (newUserInfo) => {
+        setUserData(newUserInfo);
+        setIsLoggedIn(true);
+        closeModal();
+        
+        // Si había una acción pendiente, ejecutarla ahora
+        if (pendingAction) {
+            handleConfirmAction(pendingAction.type, pendingAction.data);
+            setPendingAction(null);
+        }
+        
+        alert(`¡Bienvenido ${newUserInfo.name}! Tu cuenta ha sido creada exitosamente.`);
+    };
+
+    // ✅ FUNCIÓN: Manejar inicio de sesión
+    const handleLogin = (loginUserInfo) => {
+        setUserData(loginUserInfo);
+        setIsLoggedIn(true);
+        closeModal();
+        
+        // Si había una acción pendiente, ejecutarla ahora
+        if (pendingAction) {
+            handleConfirmAction(pendingAction.type, pendingAction.data);
+            setPendingAction(null);
+        }
+        
+        alert(`¡Bienvenido de vuelta ${loginUserInfo.name}!`);
+    };
+
+    // ✅ FUNCIÓN: Manejar cierre de sesión
+    const handleLogout = () => {
+        setUserData(null);
+        setIsLoggedIn(false);
+        setCart([]);
+        setPendingAction(null);
+        alert('Sesión cerrada exitosamente');
+    };
     
     if (!introComplete) {
         return <IntroAnimation onAnimationComplete={() => setIntroComplete(true)} />;
@@ -50,7 +121,9 @@ function App() {
                 cartItemCount={cart.length}
                 onCartClick={() => openModal('cart')}
                 onLoginClick={() => openModal('register')}
+                onLogout={handleLogout}
                 isLoggedIn={isLoggedIn}
+                userData={userData}
             />
 
             <main>
@@ -66,7 +139,17 @@ function App() {
             </main>
 
             <footer className="bg-gray-800 text-white py-10">
-                {/* ... footer sin cambios ... */}
+                <div className="container mx-auto px-6 text-center">
+                    <h3 className="text-2xl font-bold mb-4">Maya Digital</h3>
+                    <p className="text-gray-400">Conectando el mundo maya con la tecnología moderna</p>
+                    <div className="mt-4 flex justify-center space-x-6">
+                        <Link to="/" className="text-gray-400 hover:text-white transition-colors">Hoteles</Link>
+                        <Link to="/restaurantes" className="text-gray-400 hover:text-white transition-colors">Restaurantes</Link>
+                        <Link to="/experiencias" className="text-gray-400 hover:text-white transition-colors">Experiencias</Link>
+                        <Link to="/artesanos" className="text-gray-400 hover:text-white transition-colors">Artesanos</Link>
+                        <Link to="/transporte" className="text-gray-400 hover:text-white transition-colors">Transporte</Link>
+                    </div>
+                </div>
             </footer>
 
             <Modal isOpen={!!modalState.type} onClose={closeModal}>
@@ -74,13 +157,16 @@ function App() {
                 {modalState.type === 'restaurant' && <RestaurantMenu restaurant={modalState.data} onConfirm={handleConfirmAction} />}
                 {modalState.type === 'cart' && <CartModal cartItems={cart} onRemoveItem={handleRemoveFromCart} />}
                 {modalState.type === 'transporte' && <TransporteModal />}
-                {modalState.type === 'register' && <RegistrationModal onRegister={handleRegistration} />}
+                {modalState.type === 'register' && (
+                    <RegistrationModal 
+                        onRegister={handleRegistration} 
+                        onLogin={handleLogin}
+                    />
+                )}
                 {modalState.type === 'experience' && (
                     <>
                         {modalState.data?.type === 'caballos' && <CaballosBookingForm experience={modalState.data} onConfirm={handleConfirmAction} />}
                         {modalState.data?.type === 'cenote' && <CenoteBookingForm experience={modalState.data} onConfirm={handleConfirmAction} />}
-                        
-                        {/* --- AQUÍ ESTÁ EL CAMBIO --- */}
                         {modalState.data?.type === 'tour' && <TourBookingForm experience={modalState.data} onConfirm={handleConfirmAction} />}
                     </>
                 )}
