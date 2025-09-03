@@ -1,5 +1,5 @@
 // backend/src/main.rs
-use actix_web::{web, App, HttpServer, middleware, HttpResponse};
+use actix_web::{web, App, HttpServer, HttpResponse};
 use actix_cors::Cors;
 use sqlx::{postgres::PgPoolOptions, PgPool};
 use dotenv::dotenv;
@@ -231,6 +231,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(pool.clone()))
             .wrap(cors)
             .wrap(middleware::Logger::default())
+            .wrap(actix_web::middleware::Logger::default())
             // Rutas públicas
             .route("/health", web::get().to(health))
             .route("/api/hoteles", web::get().to(get_hoteles))

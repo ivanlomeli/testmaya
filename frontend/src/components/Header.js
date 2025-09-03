@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import logo from '../assets/Imagotipo-Maya-Digital-2022.png';
 
-export default function Header({ cartItemCount, onCartClick, onLoginClick, isLoggedIn, userData }) {
+export default function Header({ cartItemCount, onCartClick, onLoginClick, onLogout, isLoggedIn, userData }) {
     const [showUserMenu, setShowUserMenu] = useState(false);
 
     const navLinks = [
@@ -20,8 +20,21 @@ export default function Header({ cartItemCount, onCartClick, onLoginClick, isLog
         `relative z-10 px-4 py-1.5 text-sm font-semibold transition-colors duration-300 ${isActive ? 'text-theme-dark' : 'text-gray-500 hover:text-theme-dark'}`;
 
     const handleLogout = () => {
-        // Esta función será pasada desde App.js en una futura actualización
-        window.location.reload(); // Por ahora, recarga la página para simular logout
+        console.log('🚪 [HEADER] Cerrando sesión...');
+        
+        // Limpiar localStorage
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('user_data');
+        
+        // Cerrar menú
+        setShowUserMenu(false);
+        
+        // Llamar callback de logout
+        if (onLogout) {
+            onLogout();
+        }
+        
+        console.log('✅ [HEADER] Sesión cerrada');
     };
 
     return (
@@ -91,11 +104,7 @@ export default function Header({ cartItemCount, onCartClick, onLoginClick, isLog
                                         🏠 Mi Panel
                                     </NavLink>
                                     <button 
-                                        onClick={() => {
-                                            setShowUserMenu(false);
-                                            // Aquí iría la lógica de logout
-                                            alert('Función de logout pendiente de implementar');
-                                        }}
+                                        onClick={handleLogout}
                                         className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors"
                                     >
                                         🚪 Cerrar Sesión
