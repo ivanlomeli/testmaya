@@ -2,12 +2,11 @@
 use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder, middleware};
 use actix_cors::Cors;
 use serde::{Serialize, Deserialize};
-use chrono::{DateTime, Utc};
 use std::sync::Mutex;
 
 // ===== ESTRUCTURAS DE DATOS =====
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Deserialize, Clone)] // ✅ Agregada Deserialize
 struct Hotel {
     id: u32,
     name: String,
@@ -16,7 +15,7 @@ struct Hotel {
     image: String,
 }
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Deserialize, Clone)] // ✅ Agregada Deserialize
 struct Restaurant {
     id: u32,
     name: String,
@@ -25,7 +24,7 @@ struct Restaurant {
     image: String,
 }
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Deserialize, Clone)] // ✅ Agregada Deserialize
 struct Experience {
     id: u32,
     #[serde(rename = "type")]
@@ -35,7 +34,7 @@ struct Experience {
     image: String,
 }
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Deserialize, Clone)] // ✅ Agregada Deserialize - ESTA ERA LA CLAVE
 struct Product {
     id: u32,
     name: String,
@@ -83,7 +82,7 @@ struct RestaurantOrder {
 #[derive(Serialize, Deserialize, Clone)]
 struct Purchase {
     id: String,
-    items: Vec<Product>,
+    items: Vec<Product>, // ✅ Ahora Product tiene Deserialize
     total: f64,
     date: String,
     status: String,
