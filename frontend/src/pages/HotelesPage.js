@@ -7,6 +7,11 @@ export default function HotelesPage({ onReserveClick }) {
     const [hoteles, setHoteles] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
+    // Debug logging
+    useEffect(() => {
+        console.log('HotelesPage cargado, onReserveClick:', typeof onReserveClick);
+    }, [onReserveClick]);
+
     useEffect(() => {
         fetch('http://127.0.0.1:8080/api/hoteles')
             .then(response => response.json())
@@ -19,6 +24,17 @@ export default function HotelesPage({ onReserveClick }) {
                 setIsLoading(false);
             });
     }, []);
+
+    const handleReserveClick = (hotel) => {
+        console.log('Botón reservar clickeado para:', hotel.name);
+        console.log('onReserveClick function:', onReserveClick);
+        
+        if (typeof onReserveClick === 'function') {
+            onReserveClick(hotel);
+        } else {
+            console.error('onReserveClick no es una función');
+        }
+    };
 
     return (
         <section>
@@ -62,7 +78,7 @@ export default function HotelesPage({ onReserveClick }) {
                                             ${hotel.price} MXN
                                         </span>
                                         <button 
-                                            onClick={() => onReserveClick(hotel)} 
+                                            onClick={() => handleReserveClick(hotel)} 
                                             className="btn-primary font-bold py-2 px-4 rounded-full"
                                         >
                                             Reservar

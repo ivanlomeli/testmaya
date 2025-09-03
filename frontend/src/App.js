@@ -31,6 +31,15 @@ function App() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [userData, setUserData] = useState(null);
     const [pendingAction, setPendingAction] = useState(null);
+    
+    // ✅ NUEVOS ESTADOS PARA HISTORIAL REAL
+    const [userHistory, setUserHistory] = useState({
+        hotels: [],
+        restaurants: [],
+        experiences: [],
+        purchases: [],
+        totalSpent: 0
+    });
 
     const openModal = (type, data = null) => setModalState({ type, data });
     const closeModal = () => setModalState({ type: null, data: null });
@@ -46,7 +55,7 @@ function App() {
         setCart(prevCart => prevCart.filter(item => item.id !== productId));
     };
 
-    // ✅ FUNCIÓN: Manejar confirmaciones de reservas
+    // ✅ FUNCIÓN MODIFICADA: Manejar confirmaciones de reservas - AHORA GUARDA REAL
     const handleConfirmAction = (actionType, actionData) => {
         // Si no está logueado, guardar la acción pendiente y mostrar registro
         if (!isLoggedIn) {
@@ -55,21 +64,77 @@ function App() {
             return;
         }
 
-        // Si está logueado, procesar la acción
-        switch (actionType) {
-            case 'hotel':
-                alert(`Reserva confirmada en ${actionData.name} por $${actionData.total.toFixed(2)} MXN`);
-                break;
-            case 'restaurant':
-                alert(`Pedido confirmado en ${actionData.name} por $${actionData.total.toFixed(2)} MXN`);
-                break;
-            case 'experience':
-                alert(`Experiencia "${actionData.name}" reservada para ${actionData.personas} persona(s) por $${actionData.total.toFixed(2)} MXN`);
-                break;
-            default:
-                alert('Acción confirmada');
-        }
+        // ✅ CREAR REGISTRO REAL CON TIMESTAMP
+        const timestamp = new Date().toISOString();
+        const newRecord = {
+            id: Date.now(), // ID único basado en timestamp
+            ...actionData,
+            date: timestamp,
+            status: 'confirmed'
+        };
+
+        // ✅ GUARDAR EN EL HISTORIAL SEGÚN EL TIPO
+        setUserHistory(prevHistory => {
+            const newHistory = { ...prevHistory };
+            
+            switch (actionType) {
+                case 'hotel':
+                    newHistory.hotels.push(newRecord);
+                    newHistory.totalSpent += actionData.total;
+                    alert(`✅ Reserva confirmada en ${actionData.name} por $${actionData.total.toFixed(2)} MXN`);
+                    break;
+                    
+                case 'restaurant':
+                    newHistory.restaurants.push(newRecord);
+                    newHistory.totalSpent += actionData.total;
+                    alert(`✅ Pedido confirmado en ${actionData.name} por $${actionData.total.toFixed(2)} MXN`);
+                    break;
+                    
+                case 'experience':
+                    newHistory.experiences.push(newRecord);
+                    newHistory.totalSpent += actionData.total;
+                    alert(`✅ Experiencia "${actionData.name}" reservada para ${actionData.personas} persona(s) por $${actionData.total.toFixed(2)} MXN`);
+                    break;
+                    
+                default:
+                    alert('Acción confirmada');
+            }
+            
+            return newHistory;
+        });
+        
         closeModal();
+    };
+
+    // ✅ NUEVA FUNCIÓN: Procesar compras del carrito
+    const handleCartCheckout = () => {
+        if (cart.length === 0) return;
+        
+        if (!isLoggedIn) {
+            setPendingAction({ type: 'cart', data: { items: cart, total: cart.reduce((sum, item) => sum + item.price, 0) } });
+            openModal('register');
+            return;
+        }
+
+        const total = cart.reduce((sum, item) => sum + item.price, 0);
+        const timestamp = new Date().toISOString();
+        
+        const purchaseRecord = {
+            id: Date.now(),
+            items: [...cart],
+            total: total,
+            date: timestamp,
+            status: 'confirmed'
+        };
+
+        setUserHistory(prevHistory => ({
+            ...prevHistory,
+            purchases: [...prevHistory.purchases, purchaseRecord],
+            totalSpent: prevHistory.totalSpent + total
+        }));
+
+        setCart([]); // Vaciar carrito
+        alert(`✅ Compra realizada por $${total.toFixed(2)} MXN`);
     };
 
     // ✅ FUNCIÓN: Manejar registro de usuarios
@@ -80,7 +145,11 @@ function App() {
         
         // Si había una acción pendiente, ejecutarla ahora
         if (pendingAction) {
-            handleConfirmAction(pendingAction.type, pendingAction.data);
+            if (pendingAction.type === 'cart') {
+                handleCartCheckout();
+            } else {
+                handleConfirmAction(pendingAction.type, pendingAction.data);
+            }
             setPendingAction(null);
         }
         
@@ -95,19 +164,25 @@ function App() {
         
         // Si había una acción pendiente, ejecutarla ahora
         if (pendingAction) {
-            handleConfirmAction(pendingAction.type, pendingAction.data);
+            if (pendingAction.type === 'cart') {
+                handleCartCheckout();
+            } else {
+                handleConfirmAction(pendingAction.type, pendingAction.data);
+            }
             setPendingAction(null);
         }
         
         alert(`¡Bienvenido de vuelta ${loginUserInfo.name}!`);
     };
 
-    // ✅ FUNCIÓN: Manejar cierre de sesión
+    // ✅ FUNCIÓN MODIFICADA: Manejar cierre de sesión
     const handleLogout = () => {
         setUserData(null);
         setIsLoggedIn(false);
         setCart([]);
         setPendingAction(null);
+        // ✅ MANTENER EL HISTORIAL (en una app real esto se guardaría en base de datos)
+        // setUserHistory({ hotels: [], restaurants: [], experiences: [], purchases: [], totalSpent: 0 });
         alert('Sesión cerrada exitosamente');
     };
     
@@ -128,13 +203,38 @@ function App() {
 
             <main>
                 <Routes>
-                    <Route path="/" element={<HotelesPage onReserveClick={(data) => openModal('hotel', data)} />} />
-                    <Route path="/restaurantes" element={<RestaurantesPage onMenuClick={(data) => openModal('restaurant', data)} />} />
-                    <Route path="/experiencias" element={<ExperienciasPage onExperienceClick={(data) => openModal('experience', data)} />} />
+                    <Route 
+                        path="/" 
+                        element={
+                            <HotelesPage 
+                                onReserveClick={(data) => {
+                                    console.log('onReserveClick llamada con:', data);
+                                    openModal('hotel', data);
+                                }} 
+                            />
+                        } 
+                    />
+                    <Route 
+                        path="/restaurantes" 
+                        element={
+                            <RestaurantesPage 
+                                onMenuClick={(data) => openModal('restaurant', data)} 
+                            />
+                        } 
+                    />
+                    <Route 
+                        path="/experiencias" 
+                        element={
+                            <ExperienciasPage 
+                                onExperienceClick={(data) => openModal('experience', data)} 
+                            />
+                        } 
+                    />
                     <Route path="/artesanos" element={<ArtesanosPage />} />
                     <Route path="/artesanos/:productId" element={<ProductDetailPage onAddToCart={handleAddToCart}/>} />
                     <Route path="/transporte" element={<TransportePage onSolicitarClick={() => openModal('transporte')} />} />
-                    <Route path="/portal" element={<PortalPage userData={userData} />} />
+                    {/* ✅ PASAR EL HISTORIAL REAL AL PORTAL */}
+                    <Route path="/portal" element={<PortalPage userData={userData} userHistory={userHistory} />} />
                 </Routes>
             </main>
 
@@ -155,7 +255,8 @@ function App() {
             <Modal isOpen={!!modalState.type} onClose={closeModal}>
                 {modalState.type === 'hotel' && <HotelBookingForm hotel={modalState.data} onConfirm={handleConfirmAction} />}
                 {modalState.type === 'restaurant' && <RestaurantMenu restaurant={modalState.data} onConfirm={handleConfirmAction} />}
-                {modalState.type === 'cart' && <CartModal cartItems={cart} onRemoveItem={handleRemoveFromCart} />}
+                {/* ✅ PASAR LA FUNCIÓN DE CHECKOUT REAL */}
+                {modalState.type === 'cart' && <CartModal cartItems={cart} onRemoveItem={handleRemoveFromCart} onCheckout={handleCartCheckout} />}
                 {modalState.type === 'transporte' && <TransporteModal />}
                 {modalState.type === 'register' && (
                     <RegistrationModal 
